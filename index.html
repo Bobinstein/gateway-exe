@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Gateway</title>
+    <style>
+        /* Add styles for tabs and content */
+        .tab {
+            overflow: hidden;
+            background-color: #f1f1f1;
+            display: flex;
+        }
+
+        .tab button {
+            background-color: inherit;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+            font-size: 17px;
+            flex-grow: 1;
+        }
+
+        .tab button:hover {
+            background-color: #ddd;
+        }
+
+        .tab button.active {
+            background-color: #ccc;
+        }
+
+        .tabcontent {
+            display: none;
+            padding: 6px 12px;
+            border-top: none;
+        }
+
+        .tabcontent.active {
+            display: block;
+        }
+
+        /* Other styles omitted for brevity */
+    </style>
+</head>
+<body>
+    <div class="tab">
+        <button class="tablinks" onclick="openTab(event, 'Docker')">Docker</button>
+        <button class="tablinks" onclick="openTab(event, 'Domain')">Domain</button>
+    </div>
+
+    <div id="Docker" class="tabcontent">
+    
+        <!-- Docker Container Management Section -->
+        <div id="docker-container-management-section">
+            <h3>Gateway Container Management</h3>
+            <button id="start-gateway-btn">Start Gateway</button>
+            <button id="stop-gateway-btn">Stop Gateway</button>
+        </div>
+
+        <div id="env-section">
+            <h2>Environment Variables</h2>
+            <p>Set your environmental variables</p>
+            <label for="ar-io-wallet">AR_IO_WALLET:</label>
+            <input type="text" id="ar-io-wallet" placeholder="Enter your wallet address">
+            <button id="save-env" class="action-button">Save</button>
+        </div>
+
+         <!-- Observer Wallet Selection Section -->
+    <div id="wallet-section">
+        <h2>Observer Wallet</h2>
+        <p>Select the Arweave wallet you want to use to submit Observer reports</p>
+        <label for="wallet-file">Select Wallet File:</label>
+        <input type="file" id="wallet-file" accept=".json">
+        <button id="load-wallet" class="action-button">Load Wallet</button>
+        <p id="wallet-status">No wallet loaded.</p>
+    </div>
+    
+    </div>
+
+    <div id="Domain" class="tabcontent">
+        <h2>Domain Settings</h2>
+        <label for="fqdn">Fully Qualified Domain Name (FQDN):</label>
+        <input type="text" id="fqdn" placeholder="example.com">
+        <br><br>
+        <label for="namecheap">Is your provider Namecheap?</label>
+        <input type="checkbox" id="namecheap">
+        <br><br>
+        <div id="namecheap-api" style="display: none;">
+            <label for="username">Namecheap Username:</label>
+            <input type="text" id="username" placeholder="Enter your Namecheap username">
+            <br><br>
+            <label for="api-key">Namecheap API Key:</label>
+            <input type="text" id="api-key" placeholder="Enter your Namecheap API key">
+            <p>You must enable API access and add your IP address to your Namecheap IP whitelist <a href="https://ap.www.namecheap.com/settings/tools/apiaccess/" target="_blank" rel="noreferrer">here</a>, find your IP at <a href="https://www.whatsmyip.org/" target="_blank" rel="noreferrer">whatsmyip.org</a></p>
+        </div>
+        <br><br>
+        <button id="save-domain" class="action-button">Save Domain and api information</button>
+        <br><br>
+        <p>With your namecheap api information provided, click below to deploy an nginx server. This will automatically create dns records using the namecheap api and obtain ssl certificates.</p>
+        <button id="deploy-nginx" class="action-button">Deploy Nginx</button>
+    </div>
+
+    <script>
+        // Tab control
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; tablinks.length > i; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+
+        document.getElementById('start-gateway-btn').addEventListener('click', () => {
+            window.electronAPI.startGateway();
+        });
+
+        document.getElementById('stop-gateway-btn').addEventListener('click', () => {
+            window.electronAPI.stopGateway();
+        });
+
+        const arIoWalletInput = document.getElementById('ar-io-wallet');
+        const saveEnvButton = document.getElementById('save-env');
+
+        window.electronAPI.on('load-env', (event, env) => {
+            arIoWalletInput.value = env.AR_IO_WALLET || '';
+        });
+
+        saveEnvButton.addEventListener('click', () => {
+            const arIoWallet = arIoWalletInput.value.trim();
+            window.electronAPI.saveEnv({ AR_IO_WALLET: arIoWallet });
+        });
+
+        // Show or hide Namecheap API input based on checkbox state
+        document.getElementById('namecheap').addEventListener('change', function() {
+            const apiDiv = document.getElementById('namecheap-api');
+            if (this.checked) {
+                apiDiv.style.display = 'block';
+            } else {
+                apiDiv.style.display = 'none';
+            }
+        });
+        document.getElementById('deploy-nginx').addEventListener('click', () => {
+    const fqdn = document.getElementById('fqdn').value.trim();
+    const isNamecheap = document.getElementById('namecheap').checked;
+    const username = document.getElementById('username').value.trim();
+    const apiKey = document.getElementById('api-key').value.trim();
+
+    if (fqdn) {
+        window.electronAPI.deployNginx({ fqdn, isNamecheap, username, apiKey });
+    } else {
+        alert('Please enter a valid FQDN.');
+    }
+});
+
+        // Save domain settings
+        document.getElementById('save-domain').addEventListener('click', () => {
+            const fqdn = document.getElementById('fqdn').value.trim();
+            const isNamecheap = document.getElementById('namecheap').checked;
+            const username = document.getElementById('username').value.trim();
+            const apiKey = document.getElementById('api-key').value.trim();
+
+            if (fqdn) {
+                window.electronAPI.saveDomain({ fqdn, isNamecheap, username, apiKey });
+            } else {
+                alert('Please enter a valid FQDN.');
+            }
+        });
+
+        // Load saved domain settings (if any)
+        window.electronAPI.loadDomain((event, domainData) => {
+            if (domainData) {
+                document.getElementById('fqdn').value = domainData.fqdn;
+                document.getElementById('namecheap').checked = domainData.isNamecheap;
+                if (domainData.isNamecheap) {
+                    document.getElementById('namecheap-api').style.display = 'block';
+                    document.getElementById('username').value = domainData.username || '';
+                    document.getElementById('api-key').value = domainData.apiKey || '';
+                }
+            }
+        });
+
+        document.getElementById('load-wallet').addEventListener('click', () => {
+    const walletFileInput = document.getElementById('wallet-file');
+    const filePath = walletFileInput.files[0]?.path;
+    
+    if (filePath) {
+        window.electronAPI.loadWallet(filePath);
+    } else {
+        document.getElementById('wallet-status').textContent = 'No wallet file selected.';
+    }
+});
+
+// Handle wallet load status updates
+window.electronAPI.on('wallet-status', (event, status) => {
+    document.getElementById('wallet-status').textContent = status;
+});
+    </script>
+</body>
+</html>

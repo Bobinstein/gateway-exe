@@ -1,0 +1,32 @@
+{
+  "name": "gexe",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "start:admin": "start-electron-admin.bat",
+    "build": "electron-builder build --win --x64",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": "main.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "arweave": "^1.15.1",
+    "axios": "^1.7.4",
+    "child_process": "^1.0.2",
+    "dotenv": "^16.4.5",
+    "js-yaml": "^4.1.0",
+    "namecheap-api": "^1.0.5",
+    "nat-upnp": "^1.1.1",
+    "node-upnp-client": "^0.0.2",
+    "public-ip": "^7.0.1"
+  },
+  "devDependencies": {
+    "electron": "^31.3.1",
+    "electron-builder": "^24.13.3",
+    "pkg": "^5.8.1"
+  }
+}
